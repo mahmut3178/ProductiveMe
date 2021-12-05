@@ -11,7 +11,7 @@ namespace Core.Utilities.ResultsHelper
         public ErrorResult(string message) : base(false, message)
         {
         }
-        public ErrorResult(bool success) : base(success)
+        public ErrorResult() : base(false)
         {
         }
     }

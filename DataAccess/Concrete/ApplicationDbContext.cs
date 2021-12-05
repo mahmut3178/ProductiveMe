@@ -9,6 +9,7 @@ namespace DataAccess.Concrete
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            var a = AppDomain.CurrentDomain.BaseDirectory;
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             IConfigurationRoot configuration = new ConfigurationBuilder()
             .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)

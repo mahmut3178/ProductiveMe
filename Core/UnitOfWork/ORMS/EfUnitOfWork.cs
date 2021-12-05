@@ -13,6 +13,16 @@ namespace Core.UnitOfWork.ORMS
             _context = context;
         }
 
+
+        public IRepository<TEntity> GetEntityRepository<TEntity>() where TEntity : class, new()
+        {
+            return new EfRepository<TEntity>(_context);
+        }
+
+        public IQueryable<TEntity> GetQuery<TEntity>() where TEntity : Entity, new()
+        {
+            return _context.Set<TEntity>();
+        }
         public void Dispose()
         {
             Dispose(true);
@@ -27,22 +37,12 @@ namespace Core.UnitOfWork.ORMS
             }
         }
 
-        public IRepository<TEntity> GetEntityRepository<TEntity>() where TEntity : class, new()
-        {
-            return new EfRepository<TEntity>(_context);
-        }
-
-        public IQueryable<TEntity> GetQuery<TEntity>() where TEntity : Entity, new()
-        {
-            return _context.Set<TEntity>();
-        }
-
         public void Save()
         {
             _context.SaveChanges();
         }
 
-        public Task SaveAync()
+        public Task SaveAsync()
         {
             return _context.SaveChangesAsync();
         }
