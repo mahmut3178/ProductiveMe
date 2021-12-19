@@ -1,4 +1,5 @@
-﻿using Core.UnitOfWork.Repositories;
+﻿using Core.Entities.Concrete;
+using Core.UnitOfWork.Repositories;
 using Core.Utilities.ResultsHelper;
 using DataAccess.Dtos.Auth;
 using System;
@@ -11,6 +12,7 @@ namespace Business.Services.Abstract
 {
     public interface IUserService
     {
-        public Task<IDataResult<Guid>> Register(UserRegisterDto userDto);
+        public Task<IDataResult<UserTokenDto>> Register(UserRegisterDto userDto);
+        public IDataResult<UserTokenDto> Login(UserLoginDto userDto);
     }
 }

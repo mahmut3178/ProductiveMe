@@ -1,10 +1,12 @@
 ﻿using Business.Services.Abstract;
+using Core.Entities.Concrete;
 using Core.UnitOfWork;
 using Core.UnitOfWork.Repositories;
 using Core.Utilities.ResultsHelper;
-using Core.Utilities.Security;
+using Core.Utilities.Security.Hashing;
+using Core.Utilities.Security.Jwt;
 using DataAccess.Dtos.Auth;
-using DataAccess.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Business.Services.Concrete.EntityFramework
 {
@@ -12,21 +14,45 @@ namespace Business.Services.Concrete.EntityFramework
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<User> _repo;
-        public EfUserService(IUnitOfWork unitOfWork)
+        private readonly ITokenHelper _tokenHelper;
+        public EfUserService(IUnitOfWork unitOfWork, ITokenHelper tokenHelper)
         {
             _unitOfWork = unitOfWork;
             _repo = _unitOfWork.GetEntityRepository<User>();
+            _tokenHelper = tokenHelper;
         }
-        public async Task<IDataResult<Guid>> Register(UserRegisterDto userDto)
+        public IDataResult<UserTokenDto> Login(UserLoginDto userDto)
+        {
+            var user = _unitOfWork.GetQuery<User>().Include(inc => inc.UserProfiles).Include(inc => inc.UserRoles).ThenInclude(inc => inc.Role).FirstOrDefault(u => u.UserName == userDto.Username || u.Email == userDto.Username);
+
+            if (user == null)
+                return new ErrorDataResult<UserTokenDto>("User does not exist!");
+
+            var validCredentials = HashingHelper.VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt);
+
+            if (!validCredentials)
+                return new ErrorDataResult<UserTokenDto>("Invalid credentials!");
+
+            var roles = user.UserRoles?.Select(ur => ur.Role).ToList();
+
+            if (roles == null)
+                return new ErrorDataResult<UserTokenDto>("User does not have any authorization set!");
+
+            var token = _tokenHelper.CreateToken(user, roles);
+            var userTokenDto = new UserTokenDto { UserId = user.Id, Token = token.Token };
+            return new SuccessDataResult<UserTokenDto>(userTokenDto, "Login successful");
+        }
+
+        public async Task<IDataResult<UserTokenDto>> Register(UserRegisterDto userDto)
         {
             bool doesUserNameExist = _repo.Get(user => user.UserName == userDto.UserName) != null;
             bool doesEmailExist = _repo.Get(user => user.Email == userDto.Email) != null;
 
             if (doesUserNameExist)
-                return new ErrorDataResult<Guid>("The given Username already exists!");
+                return new ErrorDataResult<UserTokenDto>("The given Username already exists!");
 
             if (doesEmailExist)
-                return new ErrorDataResult<Guid>("The given Email already exists!");
+                return new ErrorDataResult<UserTokenDto>("The given Email already exists!");
 
             byte[] passwordHash;
             byte[] passwordSalt;
@@ -56,7 +82,7 @@ namespace Business.Services.Concrete.EntityFramework
                 await uow.SaveAsync();
             }
 
-            return new SuccessDataResult<Guid>(newUser.Id, "Account successfully registered!");
+            return new SuccessDataResult<UserTokenDto>("Account successfully registered!");
         }
     }
 }

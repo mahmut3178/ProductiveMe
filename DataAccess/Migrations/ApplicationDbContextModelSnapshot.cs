@@ -22,7 +22,22 @@ namespace DataAccess.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("Core.Concrete.User", b =>
+            modelBuilder.Entity("DataAccess.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("DataAccess.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -49,7 +64,7 @@ namespace DataAccess.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Core.Concrete.UserProfile", b =>
+            modelBuilder.Entity("DataAccess.Entities.UserProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -77,9 +92,27 @@ namespace DataAccess.Migrations
                     b.ToTable("UserProfiles");
                 });
 
-            modelBuilder.Entity("Core.Concrete.UserProfile", b =>
+            modelBuilder.Entity("DataAccess.Entities.UserRole", b =>
                 {
-                    b.HasOne("Core.Concrete.User", "User")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles");
+                });
+
+            modelBuilder.Entity("DataAccess.Entities.UserProfile", b =>
+                {
+                    b.HasOne("DataAccess.Entities.User", "User")
                         .WithMany("UserProfiles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -88,9 +121,35 @@ namespace DataAccess.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Core.Concrete.User", b =>
+            modelBuilder.Entity("DataAccess.Entities.UserRole", b =>
+                {
+                    b.HasOne("DataAccess.Entities.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DataAccess.Entities.User", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DataAccess.Entities.Role", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("DataAccess.Entities.User", b =>
                 {
                     b.Navigation("UserProfiles");
+
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,5 +1,5 @@
-﻿using DataAccess.Abstract;
-using DataAccess.Entities;
+﻿using Core.Entities.Concrete;
+using DataAccess.Abstract;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -7,18 +7,23 @@ namespace DataAccess.Concrete
 {
     public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            var a = AppDomain.CurrentDomain.BaseDirectory;
-            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            IConfigurationRoot configuration = new ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-            optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
-        }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<User> Users { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UserRole>()
+        .HasKey(ur => new { ur.UserId, ur.RoleId});
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId);
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId);
+        }
     }
 }

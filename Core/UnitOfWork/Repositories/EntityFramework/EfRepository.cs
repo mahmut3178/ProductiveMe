@@ -50,7 +50,7 @@ namespace Core.UnitOfWork.Repositories.EntityFramework
 
         public IEnumerable<TEntity> GetMany(Expression<Func<TEntity, bool>> filter = null)
         {
-            return _set.Where(filter).ToList();
+            return filter == null ? _set.ToList() : _set.Where(filter).ToList();
         }
 
     }

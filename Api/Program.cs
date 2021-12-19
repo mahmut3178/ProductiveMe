@@ -1,23 +1,14 @@
-using Business.Services.Abstract;
-using Business.Services.Concrete.EntityFramework;
-using Core.UnitOfWork;
-using Core.UnitOfWork.ORMS;
-using DataAccess.Concrete;
-using Microsoft.EntityFrameworkCore;
+using Api.Extensions;
+using Api.Middlewares;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Runtime.ExceptionServices;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-builder.Services.AddScoped<IUserService, EfUserService>();
-builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
-builder.Services.AddScoped<DbContext, ApplicationDbContext>();
-
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddIdentityServices(builder.Configuration);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -27,10 +18,31 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+//[Authorize] would usually handle this
+//app.Use(async (context, next) =>
+//{
+//    // Use this if there are multiple authentication schemes
+//    var authResult = await context.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+//    if (authResult.Succeeded && authResult.Principal.Identity.IsAuthenticated)
+//    {
+//        await next();
+//    }
+//    else if (authResult.Failure != null)
+//    {
+//        // Rethrow, let the exception page handle it.
+//        ExceptionDispatchInfo.Capture(authResult.Failure).Throw();
+//    }
+//    else
+//    {
+//        await context.ChallengeAsync();
+//    }
+//});
+
+
 app.UseHttpsRedirection();
-
+app.UseMiddleware<AuthorizationMiddleware>();
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

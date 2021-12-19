@@ -1,6 +1,6 @@
 ﻿using Core.Entities.Abstract;
 
-namespace DataAccess.Entities
+namespace Core.Entities.Concrete
 {
     public class User : Entity
     {
@@ -8,6 +8,7 @@ namespace DataAccess.Entities
         public byte[] PasswordSalt { get; set; }
         public byte[] PasswordHash { get; set; }
         public string Email { get; set; }
-        public List<UserProfile> UserProfiles { get; set; }
+        public ICollection<UserProfile> UserProfiles { get; set; }
+        public ICollection<UserRole> UserRoles { get; set; }
     }
 }
