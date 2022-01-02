@@ -23,7 +23,11 @@ namespace Business.Services.Concrete.EntityFramework
         }
         public IDataResult<UserTokenDto> Login(UserLoginDto userDto)
         {
-            var user = _unitOfWork.GetQuery<User>().Include(inc => inc.UserProfiles).Include(inc => inc.UserRoles).ThenInclude(inc => inc.Role).FirstOrDefault(u => u.UserName == userDto.Username || u.Email == userDto.Username);
+            var user = _unitOfWork.GetQuery<User>()
+                .Include(inc => inc.UserProfiles)
+                .Include(inc => inc.UserRoles)
+                .ThenInclude(inc => inc.Role)
+                .FirstOrDefault(u => u.UserName == userDto.Username || u.Email == userDto.Username);
 
             if (user == null)
                 return new ErrorDataResult<UserTokenDto>("User does not exist!");
@@ -36,10 +40,14 @@ namespace Business.Services.Concrete.EntityFramework
             var roles = user.UserRoles?.Select(ur => ur.Role).ToList();
 
             if (roles == null)
-                return new ErrorDataResult<UserTokenDto>("User does not have any authorization set!");
+                return new ErrorDataResult<UserTokenDto>("User does not have authorization");
 
             var token = _tokenHelper.CreateToken(user, roles);
-            var userTokenDto = new UserTokenDto { UserId = user.Id, Token = token.Token };
+            var userTokenDto = new UserTokenDto
+            {
+                UserId = user.Id,
+                Token = token.Token
+            };
             return new SuccessDataResult<UserTokenDto>(userTokenDto, "Login successful");
         }
 
@@ -59,21 +67,29 @@ namespace Business.Services.Concrete.EntityFramework
 
             HashingHelper.CreatePasswordHash(userDto.Password, out passwordHash, out passwordSalt);
 
+            var guid = Guid.NewGuid();
+            var roles = _unitOfWork.GetEntityRepository<Role>().GetMany(r => r.Name == "Standard").ToList();
             User newUser = new User
             {
-                Id = Guid.NewGuid(),
+                Id = guid,
                 UserName = userDto.UserName,
                 Email = userDto.Email,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
-                UserProfiles = new List<UserProfile>{
+                UserProfiles = new List<UserProfile> {
                     new UserProfile
                     {
                         FirstName = userDto.FirstName,
                         LastName = userDto.LastName,
                         ProfileEmail = userDto.Email
                     }
-                }
+                },
+                UserRoles = roles.Select(r => new UserRole
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = guid,
+                    RoleId = r.Id
+                }).ToList()
             };
 
             using (var uow = _unitOfWork)
@@ -82,7 +98,18 @@ namespace Business.Services.Concrete.EntityFramework
                 await uow.SaveAsync();
             }
 
-            return new SuccessDataResult<UserTokenDto>("Account successfully registered!");
+            if (roles == null)
+                return new ErrorDataResult<UserTokenDto>("User does not have authorization");
+
+            var token = _tokenHelper.CreateToken(newUser, roles);
+
+            var userTokenDto = new UserTokenDto
+            {
+                UserId = newUser.Id,
+                Token = token.Token
+            };
+
+            return new SuccessDataResult<UserTokenDto>(userTokenDto, "Account successfully registered!");
         }
     }
 }

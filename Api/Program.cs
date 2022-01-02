@@ -40,7 +40,7 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
-app.UseMiddleware<AuthorizationMiddleware>();
+//app.UseMiddleware<AuthorizationMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

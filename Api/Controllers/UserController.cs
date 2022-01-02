@@ -29,13 +29,13 @@ namespace Api.Controllers
         {
             if (userDto == null)
             {
-                return BadRequest("Empty user data");
+                return ValidationProblem("Empty user data");
             }
 
             var result = await _userService.Register(userDto);
 
             if (!result.Success)
-                return BadRequest(result.Message);
+                return ValidationProblem(result.Message);
 
             return Ok(result.Data);
         }
@@ -46,13 +46,13 @@ namespace Api.Controllers
         {
             if (userDto == null)
             {
-                return BadRequest("Empty user data");
+                return ValidationProblem("Empty user data");
             }
 
             var result = _userService.Login(userDto);
 
             if (!result.Success)
-                return BadRequest(result.Message);
+                return ValidationProblem(result.Message);
 
             return Ok(result.Data);
         }
