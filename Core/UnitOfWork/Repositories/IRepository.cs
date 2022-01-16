@@ -11,7 +11,7 @@ namespace Core.UnitOfWork.Repositories
     {
         public T Get(Expression<Func<T, bool>> filter);
         public T GetById(int id);
-        public T GetByIdGuid(Guid id);
+        public T GetByGuid(Guid id);
         public IEnumerable<T> GetMany(Expression<Func<T, bool>> filter = null);
         public T Create(T entity);
         public T Update(T entity);

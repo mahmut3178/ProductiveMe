@@ -13,7 +13,6 @@ namespace Core.UnitOfWork.ORMS
             _context = context;
         }
 
-
         public IRepository<TEntity> GetEntityRepository<TEntity>() where TEntity : class, new()
         {
             return new EfRepository<TEntity>(_context);

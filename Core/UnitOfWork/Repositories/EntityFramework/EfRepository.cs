@@ -43,7 +43,7 @@ namespace Core.UnitOfWork.Repositories.EntityFramework
             return _set.Find(id);
         }
 
-        public TEntity GetByIdGuid(Guid id)
+        public TEntity GetByGuid(Guid id)
         {
            return _set.Find(id);  
         }

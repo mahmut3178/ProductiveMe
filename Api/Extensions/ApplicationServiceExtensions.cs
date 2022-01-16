@@ -17,7 +17,7 @@ namespace Api.Extensions
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
 
-            services.AddScoped<IUserService, EfUserService>();
+            services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUnitOfWork, EfUnitOfWork>();
             services.AddScoped<DbContext, ApplicationDbContext>();
             services.AddScoped<ITokenHelper, JwtHelper>();
