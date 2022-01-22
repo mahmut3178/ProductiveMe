@@ -18,7 +18,7 @@ namespace Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Standard")]
+        [Authorize(Roles = "Standard, Admin")]
         public void Test()
         {
             Console.WriteLine("The purpose of this action is to test the systems Authorization.");

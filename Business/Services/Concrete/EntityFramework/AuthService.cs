@@ -15,11 +15,13 @@ namespace Business.Services.Concrete.EntityFramework
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<User> _repo;
         private readonly ITokenHelper _tokenHelper;
-        public AuthService(IUnitOfWork unitOfWork, ITokenHelper tokenHelper)
+        private readonly IHashingHelper _hashingHelper;
+        public AuthService(IUnitOfWork unitOfWork, ITokenHelper tokenHelper, IHashingHelper hashingHelper)
         {
             _unitOfWork = unitOfWork;
             _repo = _unitOfWork.GetEntityRepository<User>();
             _tokenHelper = tokenHelper;
+            _hashingHelper = hashingHelper;
         }
         public IDataResult<UserTokenDto> Login(UserLoginDto userDto)
         {
@@ -33,7 +35,7 @@ namespace Business.Services.Concrete.EntityFramework
             if (user == null)
                 return new ErrorDataResult<UserTokenDto>("User does not exist!");
 
-            var validCredentials = HashingHelper.VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt);
+            var validCredentials = _hashingHelper.VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt);
 
             if (!validCredentials)
                 return new ErrorDataResult<UserTokenDto>("Invalid credentials!");
@@ -51,7 +53,7 @@ namespace Business.Services.Concrete.EntityFramework
             };
 
             _unitOfWork.Save();
-            return new SuccessDataResult<UserTokenDto>(userTokenDto, "Login successful");
+            return new SuccessDataResult<UserTokenDto>(userTokenDto, "Login successful!");
         }
 
         public async Task<IDataResult<UserTokenDto>> Register(UserRegisterDto userDto)
@@ -69,7 +71,7 @@ namespace Business.Services.Concrete.EntityFramework
             byte[] passwordHash;
             byte[] passwordSalt;
 
-            HashingHelper.CreatePasswordHash(userDto.Password, out passwordHash, out passwordSalt);
+            _hashingHelper.CreatePasswordHash(userDto.Password, out passwordHash, out passwordSalt);
 
             var guid = Guid.NewGuid();
             var roles = _unitOfWork.GetEntityRepository<Role>().GetMany(r => r.Name == "Standard").ToList();
@@ -113,7 +115,7 @@ namespace Business.Services.Concrete.EntityFramework
                 Token = token.Token
             };
 
-            return new SuccessDataResult<UserTokenDto>(null, "Account successfully registered!");
+            return new SuccessDataResult<UserTokenDto>(userTokenDto, "Account successfully registered!");
         }
     }
 }

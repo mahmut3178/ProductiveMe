@@ -2,6 +2,7 @@
 using Business.Services.Concrete.EntityFramework;
 using Core.UnitOfWork;
 using Core.UnitOfWork.ORMS;
+using Core.Utilities.Security.Hashing;
 using Core.Utilities.Security.Jwt;
 using DataAccess.Concrete;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ namespace Api.Extensions
             services.AddScoped<IUnitOfWork, EfUnitOfWork>();
             services.AddScoped<DbContext, ApplicationDbContext>();
             services.AddScoped<ITokenHelper, JwtHelper>();
+            services.AddScoped<IHashingHelper, HashingHelper>();
 
             services.AddDbContext<ApplicationDbContext>(o =>
             {                

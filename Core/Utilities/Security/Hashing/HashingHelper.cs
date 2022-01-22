@@ -3,9 +3,9 @@ using System.Text;
 
 namespace Core.Utilities.Security.Hashing
 {
-    public class HashingHelper
+    public class HashingHelper: IHashingHelper
     {
-        public static void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        public void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512())
             {
@@ -14,7 +14,7 @@ namespace Core.Utilities.Security.Hashing
             }
         }
 
-        public static bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
+        public bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512(passwordSalt))
             {

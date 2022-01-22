@@ -1,4 +1,5 @@
 ﻿using Microsoft.Net.Http.Headers;
+using System.Security.Claims;
 
 namespace Api.Middlewares
 {
@@ -14,7 +15,8 @@ namespace Api.Middlewares
 
         public Task Invoke(HttpContext httpContext)
         {
-            //var httpTokenSection = httpContext.Request.Headers[HeaderNames.Authorization];
+            var userID = httpContext.User.Claims?.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier, StringComparison.OrdinalIgnoreCase))?.Value;
+            var httpTokenSection = httpContext.Request.Headers[HeaderNames.Authorization];
             return _next(httpContext);
         }
     }
