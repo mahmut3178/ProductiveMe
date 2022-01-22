@@ -14,13 +14,14 @@ using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Business.UnitTests.Tests.Services
 {
-    public class UserServiceTests
+    public class AuthServiceTests
     {
-        private IUserService _userService;
+        private IAuthService _authService;
         private Mock<IUnitOfWork> _mockUow;
         private Mock<ITokenHelper> _tokenHelper;
         private Mock<IRepository<User>> _mockUserRepository;
@@ -36,6 +37,12 @@ namespace Business.UnitTests.Tests.Services
             Password = "doe123"
         };
 
+        UserLoginDto userLogin = new UserLoginDto
+        {
+            Username = "mahmut317",
+            Password = "mahmut123"
+        };
+
         [SetUp]
         public void SetUp()
         {
@@ -45,7 +52,7 @@ namespace Business.UnitTests.Tests.Services
             _mockRoleRepository = new Mock<IRepository<Role>>();
             _mockUow.Setup(x => x.GetEntityRepository<User>()).Returns(_mockUserRepository.Object);
             _mockUow.Setup(x => x.GetEntityRepository<Role>()).Returns(_mockRoleRepository.Object);
-            _userService = new UserService(_mockUow.Object, _tokenHelper.Object);
+            _authService = new AuthService(_mockUow.Object, _tokenHelper.Object);
 
             _mockRoleRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Role, bool>>>())).Returns(_roleList);
             _tokenHelper.Setup(x => x.CreateToken(It.IsAny<User>(), It.IsAny<List<Role>>())).Returns(new AccessToken { Token = "JwtToken" });
@@ -58,7 +65,7 @@ namespace Business.UnitTests.Tests.Services
             _mockUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<User, bool>>>())).Returns<User>(null);
 
 
-            var result = _userService.Register(newUser);
+            var result = _authService.Register(newUser);
 
             //assert
             _mockUserRepository.Verify(x => x.Create(It.IsAny<User>()), Times.Once);
@@ -71,7 +78,7 @@ namespace Business.UnitTests.Tests.Services
             _mockUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<User, bool>>>())).Returns(new Mock<User>().Object);
 
 
-            var result = _userService.Register(newUser);
+            var result = _authService.Register(newUser);
 
 
             _mockUserRepository.Verify(x => x.Create(It.IsAny<User>()), Times.Never);
@@ -82,7 +89,9 @@ namespace Business.UnitTests.Tests.Services
         [Test]
         public void Login_ShouldBeSuccessful_WhenCredentialsAreValid()
         {
+            _mockUow.Setup(x => x.GetQuery<User>()).Returns( new List<User> { new Mock<User>().Object }.AsQueryable());
 
+               var result = _authService.Login(userLogin);
         }
     }
 }

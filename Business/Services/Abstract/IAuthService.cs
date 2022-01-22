@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Business.Services.Abstract
 {
-    public interface IUserService
+    public interface IAuthService
     {
         public Task<IDataResult<UserTokenDto>> Register(UserRegisterDto userDto);
         public IDataResult<UserTokenDto> Login(UserLoginDto userDto);

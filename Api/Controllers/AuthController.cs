@@ -9,12 +9,12 @@ namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class AuthController : ControllerBase
     {
-        private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly IAuthService _authService;
+        public AuthController(IAuthService authService)
         {
-            _userService = userService;
+            _authService = authService;
         }
 
         [HttpGet]
@@ -32,7 +32,7 @@ namespace Api.Controllers
                 return ValidationProblem("Empty user data");
             }
 
-            var result = await _userService.Register(userDto);
+            var result = await _authService.Register(userDto);
 
             if (!result.Success)
                 return ValidationProblem(result.Message);
@@ -49,7 +49,7 @@ namespace Api.Controllers
                 return ValidationProblem("Empty user data");
             }
 
-            var result = _userService.Login(userDto);
+            var result = _authService.Login(userDto);
 
             if (!result.Success)
                 return ValidationProblem(result.Message);

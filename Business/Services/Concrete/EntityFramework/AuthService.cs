@@ -10,12 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Business.Services.Concrete.EntityFramework
 {
-    public class UserService : IUserService
+    public class AuthService : IAuthService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<User> _repo;
         private readonly ITokenHelper _tokenHelper;
-        public UserService(IUnitOfWork unitOfWork, ITokenHelper tokenHelper)
+        public AuthService(IUnitOfWork unitOfWork, ITokenHelper tokenHelper)
         {
             _unitOfWork = unitOfWork;
             _repo = _unitOfWork.GetEntityRepository<User>();
