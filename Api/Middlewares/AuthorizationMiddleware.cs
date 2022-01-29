@@ -15,7 +15,7 @@ namespace Api.Middlewares
 
         public Task Invoke(HttpContext httpContext)
         {
-            var userID = httpContext.User.Claims?.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier, StringComparison.OrdinalIgnoreCase))?.Value;
+            //var userID = httpContext.User.Claims?.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier, StringComparison.OrdinalIgnoreCase))?.Value;
             var httpTokenSection = httpContext.Request.Headers[HeaderNames.Authorization];
             return _next(httpContext);
         }

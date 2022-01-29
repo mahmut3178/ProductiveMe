@@ -4,6 +4,7 @@ using Core.Utilities.ResultsHelper;
 using DataAccess.Dtos.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Controllers
 {
@@ -21,6 +22,8 @@ namespace Api.Controllers
         [Authorize(Roles = "Standard, Admin")]
         public void Test()
         {
+            var a = this.User;
+            var b = a.Claims.Single(x=> x.Type == ClaimTypes.NameIdentifier).Value;
             Console.WriteLine("The purpose of this action is to test the systems Authorization.");
         }
 
@@ -50,6 +53,24 @@ namespace Api.Controllers
             }
 
             var result = _authService.Login(userDto);
+
+            if (!result.Success)
+                return ValidationProblem(result.Message);
+
+            return Ok(result.Data);
+        }
+
+
+        [HttpPost("refresh")]
+        public async Task<ActionResult<UserTokenDto>> RefreshToken(RefreshTokenRequestDto refreshTokenRequestDto)
+        {
+
+            if (refreshTokenRequestDto == null || refreshTokenRequestDto.Token == null || refreshTokenRequestDto.RefreshToken == null)
+            {
+                return ValidationProblem("Refresh Token is invalid");
+            }
+
+            var result = await _authService.RefreshTokenAsync(refreshTokenRequestDto.Token, refreshTokenRequestDto.RefreshToken); ;
 
             if (!result.Success)
                 return ValidationProblem(result.Message);

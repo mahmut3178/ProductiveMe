@@ -23,7 +23,7 @@ namespace Api.Extensions
             services.AddScoped<DbContext, ApplicationDbContext>();
             services.AddScoped<ITokenHelper, JwtHelper>();
             services.AddScoped<IHashingHelper, HashingHelper>();
-
+            //services.AddScoped<I>();
             services.AddDbContext<ApplicationDbContext>(o =>
             {                
                 o.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),

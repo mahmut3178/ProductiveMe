@@ -19,7 +19,7 @@ namespace Core.UnitOfWork.Repositories.EntityFramework
         }
         public TEntity Create(TEntity entity)
         {
-            _set.Add(entity);
+            _set.AddAsync(entity);
             return entity;
         }
         public TEntity Update(TEntity entity)

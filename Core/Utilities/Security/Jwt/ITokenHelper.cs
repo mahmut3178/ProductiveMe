@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Core.Entities.Concrete;
+﻿using Core.Entities.Concrete;
+using Core.UnitOfWork.Repositories;
 
 namespace Core.Utilities.Security.Jwt
 {
     public interface ITokenHelper
     {
-        AccessToken CreateToken(User user, List<Role> roles);
+        AccessToken CreateToken(User user, IRepository<RefreshToken> refreshTokenRepository);
     }
 }

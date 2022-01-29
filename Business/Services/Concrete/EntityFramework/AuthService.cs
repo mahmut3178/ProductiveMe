@@ -7,21 +7,29 @@ using Core.Utilities.Security.Hashing;
 using Core.Utilities.Security.Jwt;
 using DataAccess.Dtos.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Business.Services.Concrete.EntityFramework
 {
     public class AuthService : IAuthService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IRepository<User> _repo;
         private readonly ITokenHelper _tokenHelper;
         private readonly IHashingHelper _hashingHelper;
-        public AuthService(IUnitOfWork unitOfWork, ITokenHelper tokenHelper, IHashingHelper hashingHelper)
+        private readonly IRepository<User> _repository;
+        private readonly IRepository<RefreshToken> _refreshTokenRepository;
+        private readonly TokenValidationParameters _tokenValidationParameters;
+        public AuthService(IUnitOfWork unitOfWork, ITokenHelper tokenHelper, IHashingHelper hashingHelper, TokenValidationParameters tokenValidationParameters)
         {
             _unitOfWork = unitOfWork;
-            _repo = _unitOfWork.GetEntityRepository<User>();
             _tokenHelper = tokenHelper;
             _hashingHelper = hashingHelper;
+            _repository = _unitOfWork.GetEntityRepository<User>();
+            _refreshTokenRepository = _unitOfWork.GetEntityRepository<RefreshToken>();
+            _tokenValidationParameters = tokenValidationParameters;
+
         }
         public IDataResult<UserTokenDto> Login(UserLoginDto userDto)
         {
@@ -40,16 +48,12 @@ namespace Business.Services.Concrete.EntityFramework
             if (!validCredentials)
                 return new ErrorDataResult<UserTokenDto>("Invalid credentials!");
 
-            var roles = user.UserRoles?.Select(ur => ur.Role).ToList();
-
-            if (roles == null)
-                return new ErrorDataResult<UserTokenDto>("User does not have authorization");
-
-            var token = _tokenHelper.CreateToken(user, roles);
+            var token = _tokenHelper.CreateToken(user, _refreshTokenRepository);
             var userTokenDto = new UserTokenDto
             {
                 UserId = user.Id,
-                Token = token.Token
+                Token = token.Token,
+                RefreshToken = token.RefreshToken
             };
 
             _unitOfWork.Save();
@@ -58,9 +62,9 @@ namespace Business.Services.Concrete.EntityFramework
 
         public async Task<IDataResult<UserTokenDto>> Register(UserRegisterDto userDto)
         {
-            var result = _repo.Get(user => user.UserName == userDto.UserName);
-            bool doesUserNameExist = _repo.Get(user => user.UserName == userDto.UserName) != null;
-            bool doesEmailExist = _repo.Get(user => user.Email == userDto.Email) != null;
+            var result = _repository.Get(user => user.UserName == userDto.UserName);
+            bool doesUserNameExist = _repository.Get(user => user.UserName == userDto.UserName) != null;
+            bool doesEmailExist = _repository.Get(user => user.Email == userDto.Email) != null;
 
             if (doesUserNameExist)
                 return new ErrorDataResult<UserTokenDto>("The given Username already exists!");
@@ -107,15 +111,113 @@ namespace Business.Services.Concrete.EntityFramework
             if (roles.Count == 0)
                 return new ErrorDataResult<UserTokenDto>("User does not have authorization");
 
-            var token = _tokenHelper.CreateToken(newUser, roles);
+            var token = _tokenHelper.CreateToken(newUser, _refreshTokenRepository);
 
             var userTokenDto = new UserTokenDto
             {
                 UserId = newUser.Id,
-                Token = token.Token
+                Token = token.Token,
+                RefreshToken = token.RefreshToken
             };
 
             return new SuccessDataResult<UserTokenDto>(userTokenDto, "Account successfully registered!");
         }
+
+        public async Task<IDataResult<UserTokenDto>> RefreshTokenAsync(string token, string refreshToken)
+        {
+            var validatedToken = GetPrincipalFromToken(token);
+            if (validatedToken == null)
+            {
+                return new ErrorDataResult<UserTokenDto>(message: "Invalid Token");
+            }
+
+
+            var expiryDateUnix = long.Parse(validatedToken.Claims.Single(c => c.Type == JwtRegisteredClaimNames.Exp).Value);
+
+            var expiryDateTimeUtc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                .AddSeconds(expiryDateUnix);
+
+
+            if (expiryDateTimeUtc > DateTime.UtcNow)
+            {
+                return new ErrorDataResult<UserTokenDto>("This token hasn't expired yet");
+            }
+
+            var jti = validatedToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
+
+            var storedRefreshToken = await _unitOfWork.GetQuery<RefreshToken>()
+                .SingleOrDefaultAsync(rt => rt.Id ==  Guid.Parse(refreshToken));
+
+            if (storedRefreshToken == null)
+            {
+                return new ErrorDataResult<UserTokenDto>("This refresh token does not exist");
+            }
+
+            if(DateTime.UtcNow > storedRefreshToken.ExpiryDate)
+            {
+                return new ErrorDataResult<UserTokenDto>("This refresh token has expired");
+            }
+
+            if(storedRefreshToken.Used)
+            {
+                return new ErrorDataResult<UserTokenDto>("This refresh token has been used");
+            }
+
+            if (storedRefreshToken.Invalidated)
+            {
+                return new ErrorDataResult<UserTokenDto>("This refresh token has been invalidated");
+            }
+            storedRefreshToken.Used = true;
+
+            User user = _unitOfWork.GetQuery<User>()
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .AsNoTracking()
+                .FirstOrDefault(x => x.Id == storedRefreshToken.UserId);
+
+            if(user == null)
+            {
+                return new ErrorDataResult<UserTokenDto>("Invalid Token");
+            }
+
+            var accessToken = _tokenHelper.CreateToken(user, _refreshTokenRepository);
+
+            await _unitOfWork.SaveAsync();
+
+            var userTokenDto = new UserTokenDto
+            {
+                UserId = user.Id,
+                Token = accessToken.Token,
+                RefreshToken = accessToken.RefreshToken
+            };
+
+            return new SuccessDataResult<UserTokenDto> (userTokenDto);
+        }
+
+
+        private ClaimsPrincipal GetPrincipalFromToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out var validatedToken);
+
+                if (!IsJwtWithValidSecurityAlgorithm(validatedToken))
+                    return null;
+
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private bool IsJwtWithValidSecurityAlgorithm(SecurityToken validatedToken)
+        {
+            return (validatedToken is JwtSecurityToken jwtSecurityToken) &&
+                jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
+        }
+        
     }
 }

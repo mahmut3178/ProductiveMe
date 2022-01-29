@@ -12,10 +12,11 @@ namespace DataAccess.Concrete
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<UserRole>()
-        .HasKey(ur => new { ur.UserId, ur.RoleId});
+        .HasKey(ur => new { ur.UserId, ur.RoleId });
             modelBuilder.Entity<UserRole>()
                 .HasOne(ur => ur.User)
                 .WithMany(u => u.UserRoles)

@@ -14,5 +14,6 @@ namespace Business.Services.Abstract
     {
         public Task<IDataResult<UserTokenDto>> Register(UserRegisterDto userDto);
         public IDataResult<UserTokenDto> Login(UserLoginDto userDto);
+        public Task<IDataResult<UserTokenDto>> RefreshTokenAsync(string token, string refreshToken);
     }
 }

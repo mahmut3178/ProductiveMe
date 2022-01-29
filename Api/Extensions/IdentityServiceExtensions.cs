@@ -13,19 +13,25 @@ namespace Api.Extensions
 
             var tokenOptions = configuration.GetSection("TokenOptions").Get<TokenOptions>();
 
-             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            TokenValidationParameters tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                ValidIssuer = tokenOptions.Issuer,
+                ValidAudience = tokenOptions.Audience,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey)
+            };
+
+            services.AddSingleton(tokenValidationParameters);
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ValidateLifetime = true,
-                        ValidIssuer = tokenOptions.Issuer,
-                        ValidAudience = tokenOptions.Audience,
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey)
-                    };
+                    options.TokenValidationParameters = tokenValidationParameters;
+
+
                 });
             return services;
         }

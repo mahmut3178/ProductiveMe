@@ -29,9 +29,9 @@ namespace Core.Extensions
             roles.ToList().ForEach(role => claims.Add(new Claim(ClaimTypes.Role, role)));
         }
 
-        public static void AddJwtId(this ICollection<Claim> claims, Guid userId)
+        public static void AddJwtId(this ICollection<Claim> claims)
         {
-            throw new NotImplementedException();
+            claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
         }
     }
 }

@@ -1,22 +1,20 @@
 ﻿using Business.Services.Abstract;
 using Business.Services.Concrete.EntityFramework;
-using Business.UnitTests.Contexts;
-using Business.UnitTests.Helpers;
 using Core.Entities.Concrete;
 using Core.UnitOfWork;
-using Core.UnitOfWork.ORMS;
 using Core.UnitOfWork.Repositories;
 using Core.Utilities.Security.Hashing;
 using Core.Utilities.Security.Jwt;
-using DataAccess.Concrete;
 using DataAccess.Dtos.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace Business.UnitTests.Tests.Services
 {
@@ -28,6 +26,7 @@ namespace Business.UnitTests.Tests.Services
         private Mock<IHashingHelper> _mockHashingHelper;
         private Mock<IRepository<User>> _mockUserRepository;
         private Mock<IRepository<Role>> _mockRoleRepository;
+        private Mock<TokenValidationParameters> _mockTokenValidationParameters;
         private List<Role> _roleList = new List<Role> { new Role { Id = Guid.NewGuid() } };
 
         UserRegisterDto newUser = new UserRegisterDto
@@ -62,39 +61,43 @@ namespace Business.UnitTests.Tests.Services
             _mockUserRepository = new Mock<IRepository<User>>();
             _mockRoleRepository = new Mock<IRepository<Role>>();
             _mockHashingHelper = new Mock<IHashingHelper>();
+            _mockTokenValidationParameters = new Mock<TokenValidationParameters>();
             _mockUow.Setup(x => x.GetEntityRepository<User>()).Returns(_mockUserRepository.Object);
             _mockUow.Setup(x => x.GetEntityRepository<Role>()).Returns(_mockRoleRepository.Object);
-            _authService = new AuthService(_mockUow.Object, _mockTokenHelper.Object, _mockHashingHelper.Object);
+            _authService = new AuthService(_mockUow.Object, _mockTokenHelper.Object, _mockHashingHelper.Object, _mockTokenValidationParameters.Object);
 
-            _mockRoleRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Role, bool>>>())).Returns(_roleList);
-            _mockTokenHelper.Setup(x => x.CreateToken(It.IsAny<User>(), It.IsAny<List<Role>>())).Returns(new AccessToken { Token = "JwtToken" });
+            _mockRoleRepository.Setup(x => x.GetMany(It.IsAny<Expression<Func<Role, bool>>>()))
+                .Returns(_roleList);
+
+            _mockTokenHelper.Setup(x => x.CreateToken(It.IsAny<User>(), It.IsAny<IRepository<RefreshToken>>()))
+                .Returns(new AccessToken { Token = "JwtToken" });
         }
 
         [Test]
-        public void Register_ShouldBeSuccessful_WhenUsernameAndEmailIsUnique()
+        public async Task Register_ShouldBeSuccessful_WhenUsernameAndEmailIsUnique()
         {
 
             _mockUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<User, bool>>>())).Returns<User>(null);
 
 
-            var result = _authService.Register(newUser);
+            var result = await _authService.Register(newUser);
 
             //assert
             _mockUserRepository.Verify(x => x.Create(It.IsAny<User>()), Times.Once);
-            Assert.True(result.Result.Success);
+            Assert.True(result.Success);
         }
 
         [Test]
-        public void Register_ShouldBeUnSuccessful_WhenUsernameOrEmailExists()
+        public async Task Register_ShouldBeUnSuccessful_WhenUsernameOrEmailExists()
         {
             _mockUserRepository.Setup(x => x.Get(It.IsAny<Expression<Func<User, bool>>>())).Returns(new Mock<User>().Object);
 
 
-            var result = _authService.Register(newUser);
+            var result = await _authService.Register(newUser);
 
 
             _mockUserRepository.Verify(x => x.Create(It.IsAny<User>()), Times.Never);
-            Assert.False(result.Result.Success);
+            Assert.False(result.Success);
         }
 
 
