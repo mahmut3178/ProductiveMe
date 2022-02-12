@@ -175,6 +175,7 @@ namespace Business.Services.Concrete.EntityFramework
                 .AsNoTracking()
                 .FirstOrDefault(x => x.Id == storedRefreshToken.UserId);
 
+
             if(user == null)
             {
                 return new ErrorDataResult<UserTokenDto>("Invalid Token");
