@@ -30,9 +30,8 @@ namespace Api.Extensions
                 .AddJwtBearer(options =>
                 {
                     options.TokenValidationParameters = tokenValidationParameters;
-
-
                 });
+
             return services;
         }
 

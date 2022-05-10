@@ -4,13 +4,10 @@ namespace Api.Extensions
 {
     public static class SwaggerServiceExtensions
     {
-
         public static IServiceCollection AddDefaultSwaggerOptions(this IServiceCollection services)
         {
-
             services.AddSwaggerGen(c =>
             {
-
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "My API",
@@ -41,7 +38,6 @@ namespace Api.Extensions
                      }
                 });
             });
-
 
             return services;
         }

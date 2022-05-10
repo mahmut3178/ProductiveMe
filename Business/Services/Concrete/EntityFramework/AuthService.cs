@@ -77,11 +77,22 @@ namespace Business.Services.Concrete.EntityFramework
 
             _hashingHelper.CreatePasswordHash(userDto.Password, out passwordHash, out passwordSalt);
 
-            var guid = Guid.NewGuid();
-            var roles = _unitOfWork.GetEntityRepository<Role>().GetMany(r => r.Name == "Standard").ToList();
+            var userGuid = Guid.NewGuid();
+            var role = _unitOfWork.GetEntityRepository<Role>().Get(r => r.Name == "Standard");
+          
+            if (role == null)
+                return new ErrorDataResult<UserTokenDto>("User does not have authorization");
+
+            var userRole = new UserRole
+            {
+                Id = Guid.NewGuid(),
+                UserId = userGuid,
+                RoleId = role.Id
+            };
+
             User newUser = new User
             {
-                Id = guid,
+                Id = userGuid,
                 UserName = userDto.UserName,
                 Email = userDto.Email,
                 PasswordHash = passwordHash,
@@ -94,12 +105,7 @@ namespace Business.Services.Concrete.EntityFramework
                        ProfileEmail = userDto.Email
                    }
                },
-                UserRoles = roles.Select(r => new UserRole
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = guid,
-                    RoleId = r.Id
-                }).ToList()
+                UserRoles = new List<UserRole> { userRole }
             };
 
             using (var uow = _unitOfWork)
@@ -108,8 +114,6 @@ namespace Business.Services.Concrete.EntityFramework
                 await uow.SaveAsync();
             }
 
-            if (roles.Count == 0)
-                return new ErrorDataResult<UserTokenDto>("User does not have authorization");
 
             var token = _tokenHelper.CreateToken(newUser, _refreshTokenRepository);
 
