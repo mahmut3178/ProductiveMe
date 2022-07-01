@@ -22,8 +22,9 @@ namespace Api.Controllers
         [Authorize(Roles = "Standard, Admin")]
         public void Test()
         {
+            var aa = this;
             var a = this.User;
-            var b = a.Claims.Single(x=> x.Type == ClaimTypes.NameIdentifier).Value;
+            var b = a.Claims.Single(x => x.Type == ClaimTypes.NameIdentifier).Value;
             Console.WriteLine("The purpose of this action is to test the systems Authorization.");
         }
 
@@ -64,7 +65,6 @@ namespace Api.Controllers
         [HttpPost("refresh")]
         public async Task<ActionResult<UserTokenDto>> RefreshToken(RefreshTokenRequestDto refreshTokenRequestDto)
         {
-
             if (refreshTokenRequestDto == null || refreshTokenRequestDto.Token == null || refreshTokenRequestDto.RefreshToken == null)
             {
                 return ValidationProblem("Refresh Token is invalid");

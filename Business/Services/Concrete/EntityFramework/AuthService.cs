@@ -130,11 +130,11 @@ namespace Business.Services.Concrete.EntityFramework
         public async Task<IDataResult<UserTokenDto>> RefreshTokenAsync(string token, string refreshToken)
         {
             var validatedToken = GetPrincipalFromToken(token);
+
             if (validatedToken == null)
             {
                 return new ErrorDataResult<UserTokenDto>(message: "Invalid Token");
             }
-
 
             var expiryDateUnix = long.Parse(validatedToken.Claims.Single(c => c.Type == JwtRegisteredClaimNames.Exp).Value);
 
@@ -157,6 +157,11 @@ namespace Business.Services.Concrete.EntityFramework
                 return new ErrorDataResult<UserTokenDto>("This refresh token does not exist");
             }
 
+            if (jti != storedRefreshToken.JwtId)
+            {
+                return new ErrorDataResult<UserTokenDto>(message: "Invalid Token");
+            }
+
             if(DateTime.UtcNow > storedRefreshToken.ExpiryDate)
             {
                 return new ErrorDataResult<UserTokenDto>("This refresh token has expired");
@@ -173,7 +178,7 @@ namespace Business.Services.Concrete.EntityFramework
             }
             storedRefreshToken.Used = true;
 
-            User user = _unitOfWork.GetQuery<User>()
+            User? user = _unitOfWork.GetQuery<User>()
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                 .AsNoTracking()

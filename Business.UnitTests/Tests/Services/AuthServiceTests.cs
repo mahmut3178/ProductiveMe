@@ -82,7 +82,6 @@ namespace Business.UnitTests.Tests.Services
 
             var result = await _authService.Register(newUser);
 
-            //assert
             _mockUserRepository.Verify(x => x.Create(It.IsAny<User>()), Times.Once);
             Assert.True(result.Success);
         }
