@@ -73,7 +73,7 @@ namespace Business.UnitTests.Tests.Services
                 .Returns(new AccessToken { Token = "JwtToken" });
         }
 
-        [Test]
+        //[Test]
         public async Task Register_ShouldBeSuccessful_WhenUsernameAndEmailIsUnique()
         {
 
